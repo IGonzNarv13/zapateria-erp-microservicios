@@ -64,3 +64,23 @@ export const obtenerBodegas = async () => {
         throw error;
     }
 };
+
+export const registrarZapato = async (datosZapato) => {
+    try {
+        const response = await api.post('/inventory/alta', datosZapato);
+        return response.data;
+    } catch (error) {
+        console.error("Error al registrar el zapato:", error);
+        throw error;
+    }
+};
+
+export const buscarCatalogo = async (modelo) => {
+    try {
+        const response = await api.get(`/inventory/catalogo/buscar?modelo=${modelo}`);
+        return response.data;
+    } catch (error) {
+        console.error("Error al buscar en catálogo:", error);
+        throw error;
+    }
+};

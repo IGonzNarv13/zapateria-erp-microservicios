@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
-import { Package, LogOut, Home, ShoppingCart, Truck, ClipboardCheck, ChevronDown, ChevronRight, Tags, Menu, User, Search} from 'lucide-react';
+import { Package, LogOut, Home, ShoppingCart, ClipboardCheck, ChevronDown, ChevronRight, Tags, Menu, User, Search, Truck, PackagePlus} from 'lucide-react';
 
 const Layout = () => {
     const navigate = useNavigate();
@@ -77,7 +77,7 @@ const Layout = () => {
                                     <Truck size={20} className="me-3"/> Ingresos
                                 </Link>
                             </li>
-
+                            
                             <li className="nav-item mt-2">
                                 <div 
                                     className="nav-link rounded-3 d-flex align-items-center justify-content-between px-3 py-2 text-white-50"

@@ -34,3 +34,24 @@ class ReporteAuditoria(BaseModel):
 
 class NuevoColor(BaseModel):
     nombre: str
+
+class ItemCorrida(BaseModel):
+    id_talla: int
+    cantidad: int
+
+# Esquema para el MODAL 1 (Alta Nueva)
+class NuevoZapatoMatriz(BaseModel):
+    modelo: str
+    id_marca: int
+    id_categoria: int
+    id_color: int
+    precio_base: float
+    id_bodega: int
+    corrida: List[ItemCorrida]
+
+# Esquema para el MODAL 2 (Ingreso Masivo)
+class EntradaMasiva(BaseModel):
+    id_zapato: int
+    id_talla: int
+    id_bodega: int
+    cantidad: int

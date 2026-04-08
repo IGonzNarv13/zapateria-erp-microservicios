@@ -1,10 +1,12 @@
 import React from 'react';
+import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './components/Login';
 import Layout from './components/Layout';
 import MainMenu from './components/MainMenu';
 import Dashboard from './components/Dashboard';
 import Buscador from './components/Busqueda';
+import Ingresos from './components/Ingresos';
 
 // Componente para proteger las rutas
 const RutaProtegida = ({ children }) => {
@@ -33,7 +35,7 @@ function App() {
                     <Route path="buscador" element={<Buscador />} />
                     <Route path="catalogos" element={<Dashboard />} />
                     <Route path="ventas" element={<div className="container mt-4"><h3>Módulo de Ventas en construcción...</h3></div>} />
-                    <Route path="ingresos" element={<div className="container mt-4"><h3>Módulo de Ingresos en construcción...</h3></div>} />
+                    <Route path="ingresos" element={<Ingresos />} />
                     <Route path="auditorias" element={<div className="container mt-4"><h3>Módulo de Auditorías en construcción...</h3></div>} />
                 </Route>
             </Routes>
