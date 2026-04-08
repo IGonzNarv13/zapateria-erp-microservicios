@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  # Base de Datos para Inventario (PostgreSQL)
+  db-inventory:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: user_inv
+      POSTGRES_PASSWORD: password_inv
+      POSTGRES_DB: inventory_db
+    ports:
+      - "5432:5432"
+
+  # Base de Datos para Ventas (MySQL)
+  db-sales:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: sales_db
+      MYSQL_USER: user_sales
+      MYSQL_PASSWORD: password_sales
+    ports:
+      - "3306:3306"
+
+  # Base de Datos para Reportes (MongoDB)
+  db-reports:
+    image: mongo:latest
+    ports:
+      - "27017:27017"

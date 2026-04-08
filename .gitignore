@@ -1,0 +1,21 @@
+# Dependencias de Node.js y React
+node_modules/
+dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Dependencias y entornos virtuales de Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# Variables de entorno (Seguridad)
+.env
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
