@@ -7,6 +7,7 @@ import MainMenu from './components/MainMenu';
 import Dashboard from './components/Dashboard';
 import Buscador from './components/Busqueda';
 import Ingresos from './components/Ingresos';
+import PuntoDeVenta from './components/PuntoDeVenta';
 
 // Componente para proteger las rutas
 const RutaProtegida = ({ children }) => {
@@ -34,7 +35,7 @@ function App() {
                     <Route index element={<MainMenu />} /> {/* Pantalla por defecto al entrar a /panel */}
                     <Route path="buscador" element={<Buscador />} />
                     <Route path="catalogos" element={<Dashboard />} />
-                    <Route path="ventas" element={<div className="container mt-4"><h3>Módulo de Ventas en construcción...</h3></div>} />
+                    <Route path="ventas" element={<PuntoDeVenta />} />
                     <Route path="ingresos" element={<Ingresos />} />
                     <Route path="auditorias" element={<div className="container mt-4"><h3>Módulo de Auditorías en construcción...</h3></div>} />
                 </Route>

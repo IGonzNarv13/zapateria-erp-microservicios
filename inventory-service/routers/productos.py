@@ -4,7 +4,7 @@ from psycopg2.extras import RealDictCursor
 from typing import List
 from database import get_db_connection
 from schemas import NuevoZapato
-from schemas import NuevoZapatoMatriz, EntradaMasiva
+from schemas import NuevoZapatoMatriz, EntradaMasiva, RestarStockRequest
 
 router = APIRouter(prefix="/api/inventory", tags=["Productos"])
 
@@ -52,6 +52,7 @@ def buscar_stock(modelo: str = "", id_marca: int = None):
         # La consulta maestra que une zapatos, colores, tallas e inventario
         query = """
             SELECT 
+                i.id_inventario,
                 z.modelo, 
                 m.nombre AS marca, 
                 col.nombre AS color, 
@@ -226,6 +227,40 @@ def entrada_masiva(datos: List[EntradaMasiva]):
     except Exception as e:
         conn.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cur.close()
+        conn.close()
+
+@router.post("/restar-stock")
+def restar_stock(datos: RestarStockRequest):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        for item in datos.articulos:
+            # 1. Intentamos restar el stock SOLO si hay suficiente
+            cur.execute("""
+                UPDATE inventario
+                SET stock_existente = stock_existente - %s
+                WHERE id_inventario = %s AND stock_existente >= %s
+                RETURNING id_inventario;
+            """, (item.cantidad, item.id_inventario, item.cantidad))
+            
+            # Si cur.fetchone() es None, significa que no se actualizó nada (por falta de stock o ID falso)
+            if cur.fetchone() is None:
+                raise Exception(f"Stock insuficiente o producto no encontrado para el ID {item.id_inventario}")
+
+            # 2. Registramos el movimiento para tu historial de auditoría
+            cur.execute("""
+                INSERT INTO movimientos_inv (id_inventario, tipo_movimiento, cantidad, motivo)
+                VALUES (%s, 'SALIDA', %s, 'Venta realizada en Punto de Venta');
+            """, (item.id_inventario, item.cantidad))
+
+        conn.commit()
+        return {"mensaje": "Stock descontado exitosamente en Postgres"}
+    
+    except Exception as e:
+        conn.rollback() # Cancelamos si no hay stock
+        raise HTTPException(status_code=400, detail=str(e))
     finally:
         cur.close()
         conn.close()

@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import List
 
+
 class NuevoZapato(BaseModel):
     modelo: str
     id_marca: int
@@ -55,3 +56,11 @@ class EntradaMasiva(BaseModel):
     id_talla: int
     id_bodega: int
     cantidad: int
+
+
+class ItemVendido(BaseModel):
+    id_inventario: int
+    cantidad: int
+
+class RestarStockRequest(BaseModel):
+    articulos: List[ItemVendido]
