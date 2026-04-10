@@ -1,4 +1,5 @@
 import { useState, useMemo, Fragment } from 'react';
+import { Search, ShoppingCart, CreditCard, CheckCircle, Tag, Store, Trash2 } from 'lucide-react';
 
 const FilaZapatoAgrupado = ({ zapatoInfo, agregarAlCarrito }) => {
     const [idSeleccionado, setIdSeleccionado] = useState(zapatoInfo.tallas[0]?.id_inventario || "");
@@ -12,6 +13,7 @@ const FilaZapatoAgrupado = ({ zapatoInfo, agregarAlCarrito }) => {
                 marca: zapatoInfo.marca,
                 color: zapatoInfo.color,
                 talla: tallaSeleccionada.talla,
+                bodega: zapatoInfo.bodega, 
                 precio_base: zapatoInfo.precio_base,
                 stock_existente: tallaSeleccionada.stock_existente
             });
@@ -19,12 +21,11 @@ const FilaZapatoAgrupado = ({ zapatoInfo, agregarAlCarrito }) => {
     };
 
     return (
-        <tr>
-            <td className="align-middle"><strong>{zapatoInfo.modelo}</strong></td>
-            <td className="align-middle">{zapatoInfo.color}</td>
+        <tr className="bg-white">
+            <td className="align-middle ps-4"><strong>{zapatoInfo.modelo}</strong> <span className="text-muted">{zapatoInfo.color}</span></td>
             <td className="align-middle">
                 <select 
-                    className="form-select form-select-sm border-dark" 
+                    className="form-select form-select-sm border-secondary" 
                     value={idSeleccionado} 
                     onChange={e => setIdSeleccionado(e.target.value)}
                 >
@@ -35,9 +36,9 @@ const FilaZapatoAgrupado = ({ zapatoInfo, agregarAlCarrito }) => {
                     ))}
                 </select>
             </td>
-            <td className="align-middle text-center fw-bold">${zapatoInfo.precio_base}</td>
+            <td className="align-middle text-center fw-bold text-success">${zapatoInfo.precio_base}</td>
             <td className="align-middle text-center">
-                <button onClick={handleAñadir} className="btn btn-success btn-sm fw-bold">
+                <button onClick={handleAñadir} className="btn btn-success btn-sm fw-bold px-3">
                     + Añadir
                 </button>
             </td>
@@ -50,39 +51,52 @@ export default function PuntoDeVenta() {
     const [resultados, setResultados] = useState([]);
     const [carrito, setCarrito] = useState([]);
     
-    // Nuevos estados para Pago y Descuentos
     const [metodoPago, setMetodoPago] = useState('Efectivo');
     const [referenciaPago, setReferenciaPago] = useState('');
-    const [tipoDescuento, setTipoDescuento] = useState('Ninguno'); // 'Ninguno', 'Monto', 'Porcentaje'
+    const [tipoDescuento, setTipoDescuento] = useState('Ninguno');
     const [valorDescuento, setValorDescuento] = useState('');
     const [motivoDescuento, setMotivoDescuento] = useState('');
 
     const buscarZapato = async (e) => {
         e.preventDefault();
         try {
-            const res = await fetch(`http://localhost:8001/api/inventory/buscar?modelo=${busqueda}`);
+            const token = localStorage.getItem('token');
+            
+            const res = await fetch(`http://localhost:8001/api/inventory/buscar?modelo=${busqueda}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
             if (!res.ok) throw new Error("Error en servidor");
             const data = await res.json();
             setResultados(data);
         } catch (error) {
-            alert("No se pudo conectar con el inventario.");
+            alert("No se pudo conectar con el inventario. Verifica tu sesión.");
         }
     };
 
-    const resultadosAgrupados = useMemo(() => {
+    const resultadosAgrupadosPorBodega = useMemo(() => {
         const grupos = {};
         resultados.forEach(zapato => {
-            if (!grupos[zapato.marca]) grupos[zapato.marca] = {};
+            if (!grupos[zapato.bodega]) grupos[zapato.bodega] = {};
+            if (!grupos[zapato.bodega][zapato.marca]) grupos[zapato.bodega][zapato.marca] = {};
+            
             const keyModeloColor = `${zapato.modelo}-${zapato.color}`;
-            if (!grupos[zapato.marca][keyModeloColor]) {
-                grupos[zapato.marca][keyModeloColor] = {
-                    marca: zapato.marca, modelo: zapato.modelo,
-                    color: zapato.color, precio_base: zapato.precio_base, tallas: []
+            if (!grupos[zapato.bodega][zapato.marca][keyModeloColor]) {
+                grupos[zapato.bodega][zapato.marca][keyModeloColor] = {
+                    marca: zapato.marca, 
+                    modelo: zapato.modelo,
+                    color: zapato.color, 
+                    precio_base: zapato.precio_base, 
+                    bodega: zapato.bodega, 
+                    tallas: []
                 };
             }
-            grupos[zapato.marca][keyModeloColor].tallas.push({
+            grupos[zapato.bodega][zapato.marca][keyModeloColor].tallas.push({
                 id_inventario: zapato.id_inventario,
-                talla: zapato.talla, stock_existente: zapato.stock_existente
+                talla: zapato.talla, 
+                stock_existente: zapato.stock_existente,
             });
         });
         return grupos;
@@ -103,7 +117,10 @@ export default function PuntoDeVenta() {
         }
     };
 
-    // Cálculos de Totales
+    const eliminarDelCarrito = (id_inventario) => {
+        setCarrito(carrito.filter(item => item.id_inventario !== id_inventario));
+    };
+
     const subtotalCarrito = carrito.reduce((acc, item) => acc + item.subtotal, 0);
     
     let descuentoCalculado = 0;
@@ -113,13 +130,11 @@ export default function PuntoDeVenta() {
         descuentoCalculado = subtotalCarrito * ((parseFloat(valorDescuento) || 0) / 100);
     }
     
-    // Evitamos totales negativos
     const totalFinal = Math.max(0, subtotalCarrito - descuentoCalculado);
 
     const cobrarVenta = async () => {
         if (carrito.length === 0) return alert("El carrito está vacío");
         
-        // Validaciones estrictas de negocio
         if (tipoDescuento !== 'Ninguno' && (!valorDescuento || valorDescuento <= 0)) {
             return alert("Ingresa un valor válido para el descuento.");
         }
@@ -145,16 +160,20 @@ export default function PuntoDeVenta() {
         };
 
         try {
+            const token = localStorage.getItem('token'); 
+            
             const res = await fetch('http://localhost:3000/api/ventas', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}` 
+                },
                 body: JSON.stringify(payload)
             });
 
             if (res.ok) {
                 const data = await res.json();
                 alert(`¡Venta Exitosa! Ticket #${data.id_venta}`);
-                // Limpiar todo después de cobrar
                 setCarrito([]); setBusqueda(''); setResultados([]);
                 setTipoDescuento('Ninguno'); setValorDescuento(''); setMotivoDescuento('');
                 setMetodoPago('Efectivo'); setReferenciaPago('');
@@ -174,7 +193,9 @@ export default function PuntoDeVenta() {
                 <div className="col-lg-8 mb-4">
                     <div className="card shadow-sm h-100 border-0">
                         <div className="card-header bg-white border-bottom-0 pt-4 pb-0">
-                            <h4 className="mb-0 fw-bold">Buscar Producto</h4>
+                            <h4 className="mb-0 fw-bold d-flex align-items-center">
+                                <Search className="me-2 text-primary" size={24} /> Buscar Producto
+                            </h4>
                         </div>
                         <div className="card-body">
                             <form onSubmit={buscarZapato} className="mb-4">
@@ -187,23 +208,40 @@ export default function PuntoDeVenta() {
                                     <button type="submit" className="btn btn-primary btn-lg px-5">Buscar</button>
                                 </div>
                             </form>
-                            <div className="table-responsive border rounded">
-                                <table className="table table-hover mb-0">
-                                    <thead className="table-dark">
-                                        <tr>
-                                            <th>Modelo</th><th>Color</th><th>Talla / Stock</th>
-                                            <th className="text-center">Precio</th><th className="text-center">Acción</th>
-                                        </tr>
-                                    </thead>
+                            
+                            <div className="table-responsive border rounded shadow-sm">
+                                <table className="table mb-0">
                                     <tbody>
-                                        {Object.keys(resultadosAgrupados).length === 0 ? (
-                                            <tr><td colSpan="5" className="text-center text-muted py-5">Realiza una búsqueda</td></tr>
+                                        {Object.keys(resultadosAgrupadosPorBodega).length === 0 ? (
+                                            <tr><td colSpan="4" className="text-center text-muted py-5">Realiza una búsqueda</td></tr>
                                         ) : (
-                                            Object.keys(resultadosAgrupados).map(marca => (
-                                                <Fragment key={marca}>
-                                                    <tr className="table-light"><td colSpan="5" className="fw-bold fs-5 text-primary py-3"> Marca: {marca}</td></tr>
-                                                    {Object.values(resultadosAgrupados[marca]).map((zapatoAgrupado, index) => (
-                                                        <FilaZapatoAgrupado key={index} zapatoInfo={zapatoAgrupado} agregarAlCarrito={agregarAlCarrito} />
+                                            Object.keys(resultadosAgrupadosPorBodega).map(bodega => (
+                                                <Fragment key={bodega}>
+                                                    <tr className="table-dark">
+                                                        <td colSpan="4" className="fw-bold fs-5 text-center py-2"> 
+                                                            <Store className="me-2 d-inline" size={20}/> Bodega: {bodega}
+                                                        </td>
+                                                    </tr>
+                                                    
+                                                    {Object.keys(resultadosAgrupadosPorBodega[bodega]).map(marca => (
+                                                        <Fragment key={`${bodega}-${marca}`}>
+                                                            <tr className="table-secondary">
+                                                                <td colSpan="4" className="fw-bold fs-6 py-2 ps-3"> 
+                                                                    Marca: {marca}
+                                                                </td>
+                                                            </tr>
+                                                            
+                                                            <tr className="table-light text-muted small fw-bold">
+                                                                <td className="ps-4">Zapato</td>
+                                                                <td>Talla / Stock</td>
+                                                                <td className="text-center">Precio</td>
+                                                                <td className="text-center">Acción</td>
+                                                            </tr>
+
+                                                            {Object.values(resultadosAgrupadosPorBodega[bodega][marca]).map((zapatoAgrupado, index) => (
+                                                                <FilaZapatoAgrupado key={index} zapatoInfo={zapatoAgrupado} agregarAlCarrito={agregarAlCarrito} />
+                                                            ))}
+                                                        </Fragment>
                                                     ))}
                                                 </Fragment>
                                             ))
@@ -219,32 +257,52 @@ export default function PuntoDeVenta() {
                 <div className="col-lg-4 mb-4">
                     <div className="card shadow-sm h-100 border-0">
                         <div className="card-header bg-dark text-white pt-3 pb-3">
-                            <h4 className="mb-0 fw-bold">Carrito de Venta</h4>
+                            <h4 className="mb-0 fw-bold d-flex align-items-center">
+                                <ShoppingCart className="me-2" size={24} /> Carrito de Venta
+                            </h4>
                         </div>
                         <div className="card-body d-flex flex-column bg-light p-3">
                             
-                            {/* Lista de productos */}
-                            <div className="flex-grow-1 overflow-auto bg-white p-2 border rounded mb-3" style={{ maxHeight: '250px' }}>
+                            <div className="flex-grow-1 overflow-auto bg-white p-2 border rounded mb-3" style={{ maxHeight: '350px' }}>
                                 {carrito.length === 0 ? (
                                     <div className="text-center text-muted mt-4">El carrito está vacío</div>
                                 ) : (
                                     <ul className="list-group list-group-flush">
                                         {carrito.map((item, i) => (
-                                            <li key={i} className="list-group-item d-flex justify-content-between px-1 border-bottom">
-                                                <div>
-                                                    <h6 className="my-0 fw-bold">{item.modelo} <small>({item.talla})</small></h6>
-                                                    <small className="text-muted">{item.cantidad} x ${item.precio_unitario}</small>
+                                            <li key={i} className="list-group-item d-flex justify-content-between align-items-start px-2 py-3 border-bottom">
+                                                <div className="flex-grow-1">
+                                                    {/* NUEVA ESTRUCTURA DE LA INFORMACIÓN EN EL CARRITO */}
+                                                    <h6 className="mb-1 fw-bold text-dark">{item.modelo}</h6>
+                                                    <div className="small text-dark mb-1">
+                                                        {item.talla} - <span className="text-capitalize">{item.color}</span>
+                                                    </div>
+                                                    <div className="small text-muted mb-1 text-capitalize">
+                                                        {item.bodega}
+                                                    </div>
+                                                    <div className="small text-muted">
+                                                        {item.cantidad} x ${item.precio_unitario}
+                                                    </div>
                                                 </div>
-                                                <span className="fw-bold text-success">${item.subtotal}</span>
+                                                <div className="d-flex flex-column align-items-end ms-2 h-100">
+                                                    <span className="fw-bold text-success mb-3 mt-1 fs-5">${item.subtotal}</span>
+                                                    <button 
+                                                        onClick={() => eliminarDelCarrito(item.id_inventario)}
+                                                        className="btn btn-sm btn-outline-danger border-0 p-1 mt-auto"
+                                                        title="Eliminar del carrito"
+                                                    >
+                                                        <Trash2 size={20} />
+                                                    </button>
+                                                </div>
                                             </li>
                                         ))}
                                     </ul>
                                 )}
                             </div>
 
-                            {/* Sección de Descuentos */}
                             <div className="bg-white border rounded p-3 mb-3 shadow-sm">
-                                <label className="form-label fw-bold text-primary mb-1">Aplicar Descuento</label>
+                                <label className="form-label fw-bold text-primary mb-1 d-flex align-items-center">
+                                    <Tag className="me-1" size={16}/> Aplicar Descuento
+                                </label>
                                 <select 
                                     className="form-select form-select-sm mb-2" 
                                     value={tipoDescuento} 
@@ -276,7 +334,6 @@ export default function PuntoDeVenta() {
                                 )}
                             </div>
 
-                            {/* Sección de Pago y Totales */}
                             <div className="bg-white border rounded p-3 shadow-sm">
                                 <div className="d-flex justify-content-between text-muted mb-1">
                                     <span>Subtotal:</span>
@@ -293,7 +350,10 @@ export default function PuntoDeVenta() {
                                     <span className="fs-2 fw-black text-success">${totalFinal.toFixed(2)}</span>
                                 </div>
                                 
-                                <label className="form-label fw-bold mb-1">Método de Pago</label>
+                                <label className="form-label fw-bold mb-1 d-flex align-items-center">
+                                    <CreditCard className="me-1 text-secondary" size={18}/> Método de Pago
+                                </label>
+                                
                                 <select 
                                     className="form-select mb-2 border-dark"
                                     value={metodoPago}
@@ -302,12 +362,11 @@ export default function PuntoDeVenta() {
                                         setReferenciaPago('');
                                     }}
                                 >
-                                    <option value="Efectivo">💵 Efectivo</option>
-                                    <option value="Tarjeta">💳 Tarjeta (TDD/TDC)</option>
-                                    <option value="Transferencia">📱 Transferencia (SPEI)</option>
+                                    <option value="Efectivo">Efectivo</option>
+                                    <option value="Tarjeta">Tarjeta (TDD/TDC)</option>
+                                    <option value="Transferencia">Transferencia (SPEI)</option>
                                 </select>
 
-                                {/* Input dinámico para referencia */}
                                 {['Tarjeta', 'Transferencia'].includes(metodoPago) && (
                                     <input 
                                         type="text" className="form-control mb-3" 
@@ -318,9 +377,9 @@ export default function PuntoDeVenta() {
 
                                 <button 
                                     onClick={cobrarVenta} disabled={carrito.length === 0}
-                                    className="btn btn-dark w-100 btn-lg fw-bold shadow mt-2"
+                                    className="btn btn-primary w-100 btn-lg fw-bold shadow mt-2 d-flex align-items-center justify-content-center"
                                 >
-                                    COBRAR ${totalFinal.toFixed(2)}
+                                    <CheckCircle className="me-2" size={24}/> COBRAR ${totalFinal.toFixed(2)}
                                 </button>
                             </div>
                             

@@ -1,9 +1,28 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../db'); 
+const jwt = require('jsonwebtoken'); // Importamos la librería de JWT
+
+// Utilizamos la misma llave robusta de Spring Boot
+const SECRET_KEY = "Firma_Secreta_Arro_2026_ShoeTrack_Enterprise_Security";
 
 router.post('/', async (req, res) => {
-    // 1. Recibimos los nuevos campos
+    // -------------------------------------------------------------
+    // VALIDACIÓN DE SEGURIDAD (JWT)
+    // -------------------------------------------------------------
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+        return res.status(401).json({ error: "Acceso denegado. No hay token." });
+    }
+    
+    const token = authHeader.split(' ')[1];
+    try {
+        jwt.verify(token, SECRET_KEY); // Validamos que el token sea genuino
+    } catch (error) {
+        return res.status(401).json({ error: "Token inválido o expirado." });
+    }
+    // -------------------------------------------------------------
+
     const { 
         id_vendedor, total, descuento, motivo_descuento, 
         metodo_pago, referencia_pago, observaciones, detalles 
@@ -14,7 +33,6 @@ router.post('/', async (req, res) => {
     try {
         await connection.beginTransaction();
 
-        // 2. Modificamos el INSERT para guardar el descuento y la referencia
         const [resultVenta] = await connection.execute(
             `INSERT INTO ventas (id_vendedor, total, descuento, motivo_descuento, metodo_pago, referencia_pago, observaciones) 
              VALUES (?, ?, ?, ?, ?, ?, ?)`,
@@ -44,9 +62,13 @@ router.post('/', async (req, res) => {
             }))
         };
 
+        // LLamada a Python pasando el TOKEN de seguridad
         const respuestaPython = await fetch('http://127.0.0.1:8001/api/inventory/restar-stock', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` // Reenviamos el token para que Python lo acepte
+            },
             body: JSON.stringify(payloadInventario)
         });
 

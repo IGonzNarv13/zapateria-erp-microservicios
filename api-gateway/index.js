@@ -11,7 +11,7 @@ app.use(cors());
 // ==========================================
 // MIDDLEWARE DE SEGURIDAD (JWT)
 // ==========================================
-const SECRET_KEY = "Firma_Secreta_Arro_2026"; // Debe coincidir con el microservicio de Identidad
+const SECRET_KEY = "Firma_Secreta_Arro_2026_ShoeTrack_Enterprise_Security"; // Debe coincidir con el microservicio de Identidad
 
 const verificarToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];

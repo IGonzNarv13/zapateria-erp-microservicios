@@ -1,8 +1,18 @@
 import api from './api';
 
+// Función auxiliar para adjuntar el token de seguridad en cada petición
+const getAuthHeaders = () => {
+    const token = localStorage.getItem('token');
+    return {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    };
+};
+
 export const obtenerCategorias = async () => {
     try {
-        const response = await api.get('/inventory/categorias');
+        const response = await api.get('/inventory/categorias', getAuthHeaders());
         return response.data;
     } catch (error) {
         console.error("Error al obtener las categorías:", error);
@@ -12,7 +22,7 @@ export const obtenerCategorias = async () => {
 
 export const obtenerColores = async () => {
     try {
-        const response = await api.get('/inventory/colores');
+        const response = await api.get('/inventory/colores', getAuthHeaders());
         return response.data;
     } catch (error) {
         console.error("Error al obtener el catálogo de colores:", error);
@@ -26,7 +36,7 @@ export const buscarStock = async (modelo, idMarca) => {
         if (modelo) params.append('modelo', modelo);
         if (idMarca) params.append('id_marca', idMarca);
 
-        const response = await api.get(`/inventory/buscar?${params.toString()}`);
+        const response = await api.get(`/inventory/buscar?${params.toString()}`, getAuthHeaders());
         return response.data;
     } catch (error) {
         console.error("Error al buscar stock:", error);
@@ -34,10 +44,9 @@ export const buscarStock = async (modelo, idMarca) => {
     }
 };
 
-
 export const obtenerMarcas = async () => {
     try {
-        const response = await api.get('/inventory/marcas');
+        const response = await api.get('/inventory/marcas', getAuthHeaders());
         return response.data;
     } catch (error) {
         console.error("Error al obtener las marcas:", error);
@@ -47,7 +56,7 @@ export const obtenerMarcas = async () => {
 
 export const obtenerTallas = async () => {
     try {
-        const response = await api.get('/inventory/tallas');
+        const response = await api.get('/inventory/tallas', getAuthHeaders());
         return response.data;
     } catch (error) {
         console.error("Error al obtener tallas:", error);
@@ -57,7 +66,7 @@ export const obtenerTallas = async () => {
 
 export const obtenerBodegas = async () => {
     try {
-        const response = await api.get('/inventory/bodegas');
+        const response = await api.get('/inventory/bodegas', getAuthHeaders());
         return response.data;
     } catch (error) {
         console.error("Error al obtener bodegas:", error);
@@ -67,7 +76,8 @@ export const obtenerBodegas = async () => {
 
 export const registrarZapato = async (datosZapato) => {
     try {
-        const response = await api.post('/inventory/alta', datosZapato);
+        // En axios.post, el objeto de configuración (headers) va en el tercer parámetro
+        const response = await api.post('/inventory/alta', datosZapato, getAuthHeaders());
         return response.data;
     } catch (error) {
         console.error("Error al registrar el zapato:", error);
@@ -77,7 +87,7 @@ export const registrarZapato = async (datosZapato) => {
 
 export const buscarCatalogo = async (modelo) => {
     try {
-        const response = await api.get(`/inventory/catalogo/buscar?modelo=${modelo}`);
+        const response = await api.get(`/inventory/catalogo/buscar?modelo=${modelo}`, getAuthHeaders());
         return response.data;
     } catch (error) {
         console.error("Error al buscar en catálogo:", error);
