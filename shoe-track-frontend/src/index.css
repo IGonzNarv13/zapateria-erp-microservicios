@@ -1,13 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
-  /* Tus variables de colores oscuros/claros que ya tenías */
   --text: #6b6375;
   --text-h: #08060d;
   --bg: #fff;
   --border: #e5e4e7;
   
-  /* Variables de Bootstrap para Soft UI */
   --bs-body-font-family: 'Inter', sans-serif;
   --bs-primary: #1a1a1a;
   --bs-primary-rgb: 26, 26, 26;
@@ -19,11 +17,9 @@ body, html, #root {
   padding: 0;
   width: 100%;
   min-height: 100vh;
-  /* IMPORTANTE: Cero bordes aquí */
   border: none; 
 }
 
-/* Opcional: Toques extra de minimalismo que tenías */
 .form-control:focus {
   border-color: #d1d1d1;
   box-shadow: 0 0 0 0.25rem rgba(0, 0, 0, 0.05);

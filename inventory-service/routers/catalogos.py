@@ -47,7 +47,6 @@ def actualizar_marca(id_marca: int, marca: NuevaMarca):
         )
         resultado = cur.fetchone()
         
-        # Si fetchone no devuelve nada, significa que el ID no existe
         if not resultado:
             conn.rollback()
             raise HTTPException(status_code=404, detail="Error: Marca no encontrada.")

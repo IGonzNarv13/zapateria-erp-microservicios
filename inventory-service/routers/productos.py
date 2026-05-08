@@ -23,15 +23,12 @@ def verificar_token(credentials: HTTPAuthorizationCredentials = Depends(security
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Token inválido")
 
-# Agregamos dependencies=[Depends(verificar_token)] para proteger todas las rutas de este archivo
 router = APIRouter(
     prefix="/api/inventory", 
     tags=["Productos"], 
     dependencies=[Depends(verificar_token)]
 )
-# -------------------------------------------------------------
 
-@router.get("/zapatos")
 def obtener_zapatos():
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor) 
@@ -53,7 +50,8 @@ def obtener_zapatos():
     finally:
         cur.close()
         conn.close()
-        
+
+
 @router.get("/buscar")
 def buscar_stock(modelo: str = "", id_marca: int = None):
     conn = get_db_connection()

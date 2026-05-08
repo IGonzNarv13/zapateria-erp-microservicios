@@ -40,7 +40,6 @@ class ItemCorrida(BaseModel):
     id_talla: int
     cantidad: int
 
-# Esquema para el MODAL 1 (Alta Nueva)
 class NuevoZapatoMatriz(BaseModel):
     modelo: str
     id_marca: int
@@ -50,13 +49,11 @@ class NuevoZapatoMatriz(BaseModel):
     id_bodega: int
     corrida: List[ItemCorrida]
 
-# Esquema para el MODAL 2 (Ingreso Masivo)
 class EntradaMasiva(BaseModel):
     id_zapato: int
     id_talla: int
     id_bodega: int
     cantidad: int
-
 
 class ItemVendido(BaseModel):
     id_inventario: int

@@ -1,24 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Plus, PackagePlus, CheckCircle } from 'lucide-react';
+import { Modal } from 'bootstrap'; 
 import { 
     obtenerMarcas, obtenerCategorias, obtenerColores, 
-    obtenerTallas, obtenerBodegas, registrarZapato, buscarCatalogo 
+    obtenerTallas, obtenerBodegas, registrarZapato, buscarCatalogo,
+    registrarEntradaMasiva 
 } from '../services/inventoryService';
 
 const Ingresos = () => {
-    // ==========================================
-    // 1. ESTADOS DEL BUSCADOR Y RESULTADOS
-    // ==========================================
     const [modeloBusqueda, setModeloBusqueda] = useState('');
     const [resultados, setResultados] = useState([]);
     const [buscando, setBuscando] = useState(false);
     const [busquedaRealizada, setBusquedaRealizada] = useState(false);
-    
     const [zapatoSeleccionado, setZapatoSeleccionado] = useState(null);
 
-    // ==========================================
-    // 2. ESTADOS PARA LOS CATÁLOGOS Y FORMULARIOS
-    // ==========================================
     const [marcas, setMarcas] = useState([]);
     const [categorias, setCategorias] = useState([]);
     const [colores, setColores] = useState([]);
@@ -30,11 +25,9 @@ const Ingresos = () => {
     };
     const [formulario, setFormulario] = useState(estadoInicialFormulario);
     const [guardando, setGuardando] = useState(false);
-
     const [idBodegaDestino, setIdBodegaDestino] = useState('');
     const [cantidadesCorrida, setCantidadesCorrida] = useState({});
 
-    // Cargar catálogos
     useEffect(() => {
         const cargarCatalogos = async () => {
             try {
@@ -49,12 +42,22 @@ const Ingresos = () => {
         };
         cargarCatalogos();
     }, []);
-
-    // ==========================================
-    // 3. FUNCIONES DE ACCIÓN
-    // ==========================================
     
     const formatTalla = (n) => n.toString().endsWith('.5') ? `${Math.floor(n)} ½` : n;
+
+    // --- FUNCIÓN DE LIMPIEZA DE MODALES (LA CLAVE) ---
+    const limpiarInterfazPostModal = (idModal) => {
+        const modalElement = document.getElementById(idModal);
+        const instance = Modal.getInstance(modalElement);
+        if (instance) instance.hide();
+
+        // Limpieza forzosa del DOM que Bootstrap a veces olvida
+        const backdrops = document.querySelectorAll('.modal-backdrop');
+        backdrops.forEach(b => b.remove()); // Quita el fondo oscuro
+        document.body.classList.remove('modal-open'); // Devuelve el scroll
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+    };
 
     const handleBuscar = async (e) => {
         if (e) e.preventDefault();
@@ -68,14 +71,8 @@ const Ingresos = () => {
         finally { setBuscando(false); }
     };
 
-    // REGISTRAR MODELO NUEVO (MODAL 1) - CON ESCUDO DE PROTECCIÓN
     const handleAltaNueva = async (e) => {
-        if (e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-
-        // --- ESCUDO 1: Evitar peticiones si ya hay una en curso ---
+        if (e) { e.preventDefault(); e.stopPropagation(); }
         if (guardando) return;
 
         const tallasAIngresar = Object.entries(cantidadesCorrida)
@@ -88,8 +85,7 @@ const Ingresos = () => {
         if (tallasAIngresar.length === 0) return alert("Ingresa al menos un par.");
         if (!idBodegaDestino) return alert("Selecciona una bodega.");
 
-        setGuardando(true); // Bloqueamos el botón inmediatamente
-        
+        setGuardando(true);
         try {
             const datosAEnviar = {
                 modelo: formulario.modelo,
@@ -100,38 +96,30 @@ const Ingresos = () => {
                 id_bodega: parseInt(idBodegaDestino),
                 corrida: tallasAIngresar
             };
-
             await registrarZapato(datosAEnviar);
+            alert(`¡Éxito! Variante creada y corrida registrada.`);
             
-            alert(`¡Éxito! Variante creada y corrida registrada correctamente.`);
-            
-            // --- LIMPIEZA SEGURA ---
             setFormulario(estadoInicialFormulario);
             setCantidadesCorrida({});
             setIdBodegaDestino('');
-            
-            const modalElement = document.getElementById('modalNuevoZapato');
-            const modal = window.bootstrap.Modal.getInstance(modalElement);
-            if (modal) modal.hide();
-            
-            // Refrescar buscador
-            handleBuscar();
 
+            // Cerramos y limpiamos
+            limpiarInterfazPostModal('modalNuevoZapato');
+
+            handleBuscar();
         } catch (error) {
-            console.error("Detalle 422:", error.response?.data);
-            // Solo mostramos error si realmente falló la primera vez
-            if (error.response?.status === 422) {
-                alert("Error de validación. Revisa que todos los campos numéricos estén llenos.");
-            }
+            console.error("Error en alta:", error);
+            alert("Error: " + (error.response?.data?.detail || "Falla de red"));
         } finally {
-            setGuardando(false); // Liberamos el escudo
+            setGuardando(false);
         }
     };
 
-    // INGRESO MASIVO (MODAL 2)
     const handleIngresoMasivo = async (e) => {
         if (e) e.preventDefault();
         if (guardando) return;
+        if (!zapatoSeleccionado) return alert("Selecciona un producto primero.");
+        if (!idBodegaDestino) return alert("Por favor, selecciona una bodega.");
 
         const tallasAIngresar = Object.entries(cantidadesCorrida)
             .filter(([_, cantidad]) => parseInt(cantidad) > 0)
@@ -146,19 +134,19 @@ const Ingresos = () => {
         
         setGuardando(true);
         try {
-            // Nota: Aquí deberás implementar el endpoint de entrada-masiva en inventoryService
-            // await registrarEntradaMasiva(tallasAIngresar);
-            alert(`¡Éxito! Corrida ingresada.`);
+            await registrarEntradaMasiva(tallasAIngresar);
+            alert(`¡Éxito! Inventario actualizado en PostgreSQL.`);
             
             setCantidadesCorrida({});
             setIdBodegaDestino('');
-            const modalElement = document.getElementById('modalIngresoStock');
-            const modal = window.bootstrap.Modal.getInstance(modalElement);
-            if (modal) modal.hide();
-            
+
+            // Cerramos y limpiamos
+            limpiarInterfazPostModal('modalIngresoStock');
+
             handleBuscar();
         } catch (error) {
-            alert("Error al guardar corrida.");
+            console.error("ERROR TÉCNICO:", error);
+            alert("Error al guardar: " + (error.response?.data?.detail || error.message));
         } finally {
             setGuardando(false);
         }
@@ -200,18 +188,16 @@ const Ingresos = () => {
                                             <h6 className="mb-1 fw-bold">{zapato.modelo} - <span className="text-primary">{zapato.marca}</span></h6>
                                             <small className="text-muted">Color: <span className="fw-semibold">{zapato.color}</span></small>
                                         </div>
-                                        <button 
-                                            className="btn btn-success btn-sm fw-bold px-3" 
-                                            data-bs-toggle="modal" data-bs-target="#modalIngresoStock"
-                                            onClick={() => { setZapatoSeleccionado(zapato); setCantidadesCorrida({}); setIdBodegaDestino(''); }}
-                                        >
+                                        <button className="btn btn-success btn-sm fw-bold px-3" data-bs-toggle="modal" data-bs-target="#modalIngresoStock"
+                                            onClick={() => { setZapatoSeleccionado(zapato); setCantidadesCorrida({}); setIdBodegaDestino(''); }}>
                                             <Plus size={16} className="me-1"/> Ingresar Corrida
                                         </button>
                                     </div>
                                 ))}
                             </div>
                             <div className="text-center mt-3 pt-3 border-top">
-                                <button className="btn btn-outline-primary rounded-pill px-4 btn-sm fw-bold" data-bs-toggle="modal" data-bs-target="#modalNuevoZapato" onClick={() => { setFormulario({...formulario, modelo: modeloBusqueda}); setCantidadesCorrida({}); setIdBodegaDestino(''); }}>
+                                <button className="btn btn-outline-primary rounded-pill px-4 btn-sm fw-bold" data-bs-toggle="modal" data-bs-target="#modalNuevoZapato" 
+                                    onClick={() => { setFormulario({...formulario, modelo: modeloBusqueda}); setCantidadesCorrida({}); setIdBodegaDestino(''); }}>
                                     + Registrar Nueva Marca/Color para este Modelo
                                 </button>
                             </div>
@@ -221,7 +207,8 @@ const Ingresos = () => {
                             <PackagePlus size={48} className="mx-auto mb-3 text-primary opacity-50" />
                             <h5 className="fw-bold text-dark">Modelo no registrado</h5>
                             <p className="text-muted mb-4 small">Este modelo no existe en el catálogo. Debes crear su ficha técnica.</p>
-                            <button className="btn btn-primary fw-bold rounded-pill px-5" data-bs-toggle="modal" data-bs-target="#modalNuevoZapato" onClick={() => { setFormulario({...formulario, modelo: modeloBusqueda}); setCantidadesCorrida({}); setIdBodegaDestino(''); }}>
+                            <button className="btn btn-primary fw-bold rounded-pill px-5" data-bs-toggle="modal" data-bs-target="#modalNuevoZapato" 
+                                onClick={() => { setFormulario({...formulario, modelo: modeloBusqueda}); setCantidadesCorrida({}); setIdBodegaDestino(''); }}>
                                 Crear Ficha Técnica Nueva
                             </button>
                         </div>
@@ -302,7 +289,7 @@ const Ingresos = () => {
                 </div>
             </div>
 
-            {/* MODAL 2: INGRESO CORRIDA */}
+            {/* MODAL 2: INGRESO CORRIDA EXISTENTE */}
             <div className="modal fade" id="modalIngresoStock" tabIndex="-1" aria-hidden="true">
                 <div className="modal-dialog modal-lg modal-dialog-centered">
                     <div className="modal-content rounded-4 border-0 shadow">
@@ -345,7 +332,6 @@ const Ingresos = () => {
                     </div>
                 </div>
             </div>
-
         </div>
     );
 };

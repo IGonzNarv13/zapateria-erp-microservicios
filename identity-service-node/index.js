@@ -1,13 +1,12 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
-const { Pool } = require('pg'); // Importamos el cliente de Postgres
+const { Pool } = require('pg');
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Configuración de la base de datos (Ajusta el password si es diferente)
 const pool = new Pool({
     user: 'user_inv',
     host: 'localhost',
@@ -22,7 +21,6 @@ app.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        // 1. Buscar al usuario en la base de datos real
         const result = await pool.query(
             'SELECT * FROM empleados WHERE email = $1 AND password = $2',
             [email, password]
@@ -34,7 +32,6 @@ app.post('/login', async (req, res) => {
 
         const usuario = result.rows[0];
 
-        // 2. Fabricar el JWT
         const payload = {
             id_empleado: usuario.id_empleado,
             rol: usuario.rol
@@ -42,7 +39,6 @@ app.post('/login', async (req, res) => {
 
         const token = jwt.sign(payload, SECRET_KEY, { expiresIn: '8h' });
 
-        // 3. Entregar el token
         res.json({
             mensaje: "Autenticación exitosa",
             token: token,

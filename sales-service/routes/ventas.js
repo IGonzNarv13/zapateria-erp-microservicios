@@ -1,9 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../db'); 
-const jwt = require('jsonwebtoken'); // Importamos la librería de JWT
+const jwt = require('jsonwebtoken');
 
-// Utilizamos la misma llave robusta de Spring Boot
 const SECRET_KEY = "Firma_Secreta_Arro_2026_ShoeTrack_Enterprise_Security";
 
 router.post('/', async (req, res) => {
@@ -17,11 +16,10 @@ router.post('/', async (req, res) => {
     
     const token = authHeader.split(' ')[1];
     try {
-        jwt.verify(token, SECRET_KEY); // Validamos que el token sea genuino
+        jwt.verify(token, SECRET_KEY);
     } catch (error) {
         return res.status(401).json({ error: "Token inválido o expirado." });
     }
-    // -------------------------------------------------------------
 
     const { 
         id_vendedor, total, descuento, motivo_descuento, 
@@ -62,12 +60,11 @@ router.post('/', async (req, res) => {
             }))
         };
 
-        // LLamada a Python pasando el TOKEN de seguridad
         const respuestaPython = await fetch('http://127.0.0.1:8001/api/inventory/restar-stock', {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}` // Reenviamos el token para que Python lo acepte
+                'Authorization': `Bearer ${token}` 
             },
             body: JSON.stringify(payloadInventario)
         });

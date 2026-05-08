@@ -9,7 +9,6 @@ import Buscador from './components/Busqueda';
 import Ingresos from './components/Ingresos';
 import PuntoDeVenta from './components/PuntoDeVenta';
 
-// Componente para proteger las rutas
 const RutaProtegida = ({ children }) => {
     const isAuthenticated = !!localStorage.getItem('token');
     if (!isAuthenticated) {
@@ -22,22 +21,19 @@ function App() {
     return (
         <BrowserRouter>
             <Routes>
-                {/* Ruta Pública */}
                 <Route path="/" element={<Login onLoginSuccess={() => window.location.href = '/panel'} />} />
 
-                {/* Rutas Protegidas que comparten el Layout */}
                 <Route path="/panel" element={
                     <RutaProtegida>
                         <Layout />
                     </RutaProtegida>
                 }>
-                    {/* El Outlet cargará estas pantallas dependiendo de la URL */}
-                    <Route index element={<MainMenu />} /> {/* Pantalla por defecto al entrar a /panel */}
+                    <Route index element={<MainMenu />} />
                     <Route path="buscador" element={<Buscador />} />
                     <Route path="catalogos" element={<Dashboard />} />
                     <Route path="ventas" element={<PuntoDeVenta />} />
                     <Route path="ingresos" element={<Ingresos />} />
-                    <Route path="auditorias" element={<div className="container mt-4"><h3>Módulo de Auditorías en construcción...</h3></div>} />
+                    <Route path="auditorias" element={<Dashboard />} />
                 </Route>
             </Routes>
         </BrowserRouter>

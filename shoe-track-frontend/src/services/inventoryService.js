@@ -1,6 +1,5 @@
 import api from './api';
 
-// Función auxiliar para adjuntar el token de seguridad en cada petición
 const getAuthHeaders = () => {
     const token = localStorage.getItem('token');
     return {
@@ -76,7 +75,6 @@ export const obtenerBodegas = async () => {
 
 export const registrarZapato = async (datosZapato) => {
     try {
-        // En axios.post, el objeto de configuración (headers) va en el tercer parámetro
         const response = await api.post('/inventory/alta', datosZapato, getAuthHeaders());
         return response.data;
     } catch (error) {
@@ -91,6 +89,17 @@ export const buscarCatalogo = async (modelo) => {
         return response.data;
     } catch (error) {
         console.error("Error al buscar en catálogo:", error);
+        throw error;
+    }
+};
+
+// CORRECCIÓN: Ahora utiliza la instancia 'api' y las cabeceras de seguridad
+export const registrarEntradaMasiva = async (datos) => {
+    try {
+        const response = await api.post('/inventory/entrada-masiva', datos, getAuthHeaders());
+        return response.data;
+    } catch (error) {
+        console.error("Error al registrar entrada masiva:", error);
         throw error;
     }
 };
