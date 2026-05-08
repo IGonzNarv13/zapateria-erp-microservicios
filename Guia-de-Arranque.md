@@ -19,53 +19,73 @@ El Gateway centraliza las peticiones y debe ser el primer servicio de software e
 
 
 cd api-gateway
+
 node index.js
 
 ##  Paso 3: Microservicios de Lógica
 A partir de aquí, el orden de arranque de estos servicios es indistinto. Se recomienda abrir una terminal independiente para cada uno.
 
+
 * **Identity Service (Java / Spring Boot)**
 Gestiona la autenticación y emisión de tokens JWT.
 
 PowerShell
+
 cd identity-service
+
 .\mvnw.cmd clean spring-boot:run
+
 Puerto: 8081
+
 
 * **Inventory Service (Python / FastAPI)**
 Controla el catálogo y el stock físico en PostgreSQL.
 
 PowerShell
+
 cd inventory-service
 
 *Activación de entorno virtual (PowerShell)*
 (Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned) ; (& .\.\.venv\Scripts\Activate.ps1)
 
 uvicorn main:app --reload --port 8001
+
 Puerto: 8001
+
 
 * **Report Service (.NET 8 / C#)**
 Genera analíticas de ventas mediante Dapper.
 
 Bash
+
 cd report-service
+
 dotnet run
+
 Puerto: 5000 / 5001
+
 
 * **Sales Service (Node.js / Express)**
 Procesa las transacciones en MySQL y descuenta stock en Python.
 
 Bash
+
 cd sales-service
+
 node index.js
+
 Puerto: 3000
+
 
 ## Paso 4: Interfaz de Usuario (React + Vite)
 Por último, levanta el Frontend para interactuar con el sistema.
 
 Bash
+
 cd shoe-track-frontend
+
 npm run dev
+
 Puerto: 5173
 
  
